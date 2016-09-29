@@ -82,7 +82,7 @@ class NetworkOperationsWebService {
    * @throws Exception when unable to json encode.
    */
   public function safe_json_encode ($value){
-    $encoded = json_encode($value);
+    $encoded = json_encode($value, JSON_PRETTY_PRINT);
     $lastError = json_last_error();
     switch ($lastError) {
       case JSON_ERROR_NONE:
@@ -120,8 +120,8 @@ class NetworkOperationsWebService {
       'geometry' => array(
         'type' => 'Point',
         'coordinates' => array(
-          (float)$result['latitude'],
           (float)$result['longitude'],
+          (float)$result['latitude'],
           (float)$result['elevation']
         )
       ),
