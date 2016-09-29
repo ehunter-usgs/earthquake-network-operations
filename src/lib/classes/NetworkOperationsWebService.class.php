@@ -29,13 +29,18 @@ class NetworkOperationsWebService {
     $results = $this->factory->getTelemetrys($query->network, $query->station);
     $output = array();
 
+    $count = 0;
     for($i = 0; $i < count($results); $i++) {
-      array_push($output, $this->format_station_geojson($results[$i]));
+      //array_push($output, $this->format_station_geojson($results[$i]));
+      $this->format_station_geojson($results[$i]);
+      $count++;
     }
 
     // print results
-    header('Content-type: application/json');
-    echo $this->safe_json_encode($output);
+    // header('Content-type: application/json');
+    // echo $this->safe_json_encode($output);
+
+    echo "Printed " . $count . " files.";
   }
 
   /**
@@ -102,15 +107,22 @@ class NetworkOperationsWebService {
       return;
     }
 
+    $affiliates = $this->factory->getAffiliates($result['network_code'], $result['station_code']);
+    $networks = array();
+
+    foreach ($affiliates as $name => $value) {
+      array_push($networks, $value['code']);
+    };
+
     $response = array(
       'type' => 'Feature',
       'id' => $result['network_code'] . "_" . $result['station_code'],
       'geometry' => array(
         'type' => 'Point',
         'coordinates' => array(
-          $result['latitude'],
-          $result['longitude'],
-          $result['elevation']
+          (float)$result['latitude'],
+          (float)$result['longitude'],
+          (float)$result['elevation']
         )
       ),
       'properties' => array(
@@ -120,13 +132,25 @@ class NetworkOperationsWebService {
         'host' => $result['host'],
         'name' => $result['name'],
         'network_code' => $result['network_code'],
+        'start_date' => $result['start_date'],
         'station_code' => $result['station_code'],
-        'virtual_networks' => array(
-          'ANSS',
-          'GSN'
-        )
+        //'telemetry' => $result['telemetry'],
+        'virtual_networks' => $networks
       )
     );
+
+    $directory = '/Users/ehunter/Documents/stations/' . $result['network_code'];
+    if (!is_dir($directory)) {
+      mkdir($directory);
+    }
+
+    $directory = $directory . "/" . $result['station_code'];
+    if (!is_dir($directory)) {
+      mkdir($directory);
+    }
+
+    // write to file
+    file_put_contents($directory . '/index.json', $this->safe_json_encode($response));
 
     return $response;
   }
